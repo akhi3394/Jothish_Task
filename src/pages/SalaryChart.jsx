@@ -3,153 +3,186 @@ import { useNavigate } from 'react-router-dom';
 import { getEmployeeData } from '../services/api';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { motion } from 'framer-motion';
-import { ChevronLeft, BarChart3, TrendingUp, DollarSign, ArrowUpRight, Loader2 } from 'lucide-react';
+import { ChevronLeft, BarChart3, TrendingUp, DollarSign, ArrowUpRight, Users, Award } from 'lucide-react';
+import Layout from '../components/Layout';
+
+const PALETTE = [
+    '#6366f1', '#8b5cf6', '#ec4899', '#f43f5e',
+    '#3b82f6', '#06b6d4', '#10b981', '#84cc16',
+    '#eab308', '#f97316'
+];
+
+const CustomTooltip = ({ active, payload, label }) => {
+    if (active && payload?.length) {
+        return (
+            <div style={{
+                background: 'white', borderRadius: 10, padding: '10px 14px',
+                border: '1px solid var(--border)', boxShadow: 'var(--shadow-md)',
+                minWidth: 140
+            }}>
+                <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 6 }}>
+                    {label}
+                </p>
+                <p style={{ fontSize: 18, fontWeight: 800, color: 'var(--text-primary)', fontFamily: "'Plus Jakarta Sans', sans-serif", letterSpacing: '-0.02em' }}>
+                    ${(payload[0].value / 1000).toFixed(1)}k
+                </p>
+            </div>
+        );
+    }
+    return null;
+};
 
 const SalaryChart = () => {
     const [data, setData] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [stats, setStats] = useState({ avg: 0, max: 0, min: 0 });
     const navigate = useNavigate();
 
     useEffect(() => {
-        const fetchData = async () => {
+        const fetch = async () => {
             try {
-                const responseData = await getEmployeeData();
-                const employees = Array.isArray(responseData) ? responseData : (responseData.data || []);
+                const res = await getEmployeeData();
+                const emps = Array.isArray(res) ? res : (res?.data || []);
 
-                const chartData = employees.slice(0, 10).map(emp => {
-                    const empName = emp?.name || 'Unknown';
-                    const empSalary = emp?.salary || '0';
-                    return {
-                        name: empName.split(' ')[0],
-                        fullName: empName,
-                        salary: parseInt(empSalary.replace(/[^0-9]/g, '')) || 0,
-                        originalSalary: empSalary
-                    };
+                const chartData = emps.slice(0, 10).map(emp => ({
+                    name: (emp?.name || 'Unknown').split(' ')[0],
+                    fullName: emp?.name || 'Unknown',
+                    salary: parseInt((emp?.salary || '0').replace(/[^0-9]/g, '')) || 0,
+                    originalSalary: emp?.salary || '$0'
+                }));
+
+                const salaries = chartData.map(d => d.salary).filter(Boolean);
+                setStats({
+                    avg: Math.round(salaries.reduce((a, b) => a + b, 0) / salaries.length),
+                    max: Math.max(...salaries),
+                    min: Math.min(...salaries)
                 });
-
                 setData(chartData);
             } catch (err) {
                 console.error(err);
             } finally {
-                setTimeout(() => setLoading(false), 800);
+                setTimeout(() => setLoading(false), 600);
             }
         };
-        fetchData();
+        fetch();
     }, []);
 
-    const COLORS = [
-        '#6366f1', '#8b5cf6', '#ec4899', '#f43f5e',
-        '#3b82f6', '#06b6d4', '#10b981', '#84cc16',
-        '#eab308', '#f97316'
+    const statCards = [
+        { label: 'Average Salary', value: `$${(stats.avg / 1000).toFixed(1)}k`, icon: DollarSign, color: 'var(--primary)' },
+        { label: 'Highest Salary', value: `$${(stats.max / 1000).toFixed(1)}k`, icon: TrendingUp, color: 'var(--success)' },
+        { label: 'Records', value: `${data.length}`, icon: Users, color: 'var(--accent)' },
     ];
 
     return (
-        <div className="min-h-screen p-6 md:p-12 max-w-[1200px] mx-auto bg-[var(--bg-main)]">
-            <motion.button
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                onClick={() => navigate('/list')}
-                className="flex items-center gap-2 text-[var(--text-muted)] hover:text-[var(--text-main)] transition-colors mb-10 font-medium text-sm"
-            >
-                <ChevronLeft size={16} /> Dashboard / Analytics
-            </motion.button>
+        <Layout>
+            <div className="page-wrapper">
+                {/* Breadcrumb */}
+                <button onClick={() => navigate('/list')} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', fontSize: 13, fontWeight: 500, marginBottom: 24, padding: 0 }}
+                    onMouseOver={e => e.currentTarget.style.color = 'var(--text-primary)'}
+                    onMouseOut={e => e.currentTarget.style.color = 'var(--text-muted)'}>
+                    <ChevronLeft size={15} /> Dashboard / Analytics
+                </button>
 
-            <motion.div
-                initial={{ opacity: 0, y: 30 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="glass-card p-1 shadow-lg !bg-white"
-            >
-                <div className="p-8 md:p-12">
-                    <div className="flex flex-col md:flex-row items-start justify-between gap-8 mb-12">
-                        <div>
-                            <div className="flex items-center gap-2.5 mb-3">
-                                <div className="w-10 h-10 bg-[var(--primary-light)] text-[var(--primary)] rounded-xl flex items-center justify-center border border-[var(--primary-light)]">
-                                    <BarChart3 size={20} />
-                                </div>
-                                <span className="text-[var(--primary)] font-bold tracking-wider text-[10px] uppercase">Financial Data</span>
-                            </div>
-                            <h1 className="text-3xl font-extrabold text-[var(--text-main)] tracking-tight mb-2">Compensation Matrix</h1>
-                            <p className="text-[var(--text-muted)] text-base">Analytical breakdown of personnel expenditure across top roles.</p>
+                {/* Header */}
+                <div style={{ marginBottom: 24 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
+                        <div style={{ width: 36, height: 36, borderRadius: 9, background: 'var(--primary-light)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <BarChart3 size={18} color="var(--primary)" />
                         </div>
-
-                        <div className="grid grid-cols-2 gap-3 w-full md:w-auto">
-                            <div className="bg-slate-50 border border-slate-100 p-4 rounded-xl">
-                                <p className="text-[9px] text-[var(--text-muted)] uppercase font-bold tracking-widest mb-1">Avg. Salary</p>
-                                <div className="flex items-center gap-2">
-                                    <p className="text-lg font-bold text-[var(--text-main)]">$118.5k</p>
-                                    <ArrowUpRight size={14} className="text-green-600" />
-                                </div>
-                            </div>
-                            <div className="bg-slate-50 border border-slate-100 p-4 rounded-xl">
-                                <p className="text-[9px] text-[var(--text-muted)] uppercase font-bold tracking-widest mb-1">Dataset</p>
-                                <p className="text-lg font-bold text-[var(--text-main)]">10 Records</p>
-                            </div>
-                        </div>
+                        <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--primary)', textTransform: 'uppercase', letterSpacing: '.08em' }}>Financial Data</span>
                     </div>
-
-                    <div className="w-full relative group mt-8 flex justify-center items-center bg-slate-50 rounded-2xl p-6 min-h-[440px] border border-slate-100">
-                        {loading ? (
-                            <Loader2 className="animate-spin text-[var(--primary)]" size={32} />
-                        ) : (
-                            <ResponsiveContainer width="100%" height={400}>
-                                <BarChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 60 }}>
-                                    <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
-                                    <XAxis
-                                        dataKey="name"
-                                        stroke="#64748b"
-                                        fontSize={11}
-                                        fontWeight={600}
-                                        tickLine={false}
-                                        axisLine={false}
-                                        interval={0}
-                                        angle={-45}
-                                        textAnchor="end"
-                                        dy={10}
-                                    />
-                                    <YAxis
-                                        stroke="#64748b"
-                                        fontSize={11}
-                                        fontWeight={600}
-                                        tickLine={false}
-                                        axisLine={false}
-                                        tickFormatter={(value) => `$${value / 1000}k`}
-                                    />
-                                    <Tooltip
-                                        cursor={{ fill: '#f1f5f9' }}
-                                        contentStyle={{
-                                            backgroundColor: '#ffffff',
-                                            border: '1px solid #e2e8f0',
-                                            borderRadius: '12px',
-                                            boxShadow: '0 4px 15px rgba(0,0,0,0.05)',
-                                            padding: '12px'
-                                        }}
-                                        itemStyle={{ color: '#0f172a', fontSize: '13px', fontWeight: '700' }}
-                                        labelStyle={{ color: '#64748b', fontSize: '11px', fontWeight: '600', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.05em' }}
-                                    />
-                                    <Bar dataKey="salary" radius={[6, 6, 0, 0]} barSize={40}>
-                                        {data.map((entry, index) => (
-                                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} fillOpacity={0.85} />
-                                        ))}
-                                    </Bar>
-                                </BarChart>
-                            </ResponsiveContainer>
-                        )}
-                    </div>
-
-                    <div className="mt-10 pt-8 border-t border-slate-100 flex flex-wrap gap-6 text-[10px] font-bold tracking-wider text-[var(--text-muted)] uppercase">
-                        <div className="flex items-center gap-2">
-                            <div className="w-2 h-2 rounded-full bg-[var(--primary)]" /> Market Benchmark +4.2%
-                        </div>
-                        <div className="flex items-center gap-2">
-                            <div className="w-2 h-2 rounded-full bg-[var(--accent)]" /> Budget Utilization 92%
-                        </div>
-                        <div className="flex items-center gap-2">
-                            <div className="w-2 h-2 rounded-full bg-slate-300" /> FY2026 Projection
-                        </div>
-                    </div>
+                    <h1 style={{ fontSize: 'clamp(20px,2.5vw,26px)', fontWeight: 800, color: 'var(--text-primary)', fontFamily: "'Plus Jakarta Sans',sans-serif", letterSpacing: '-0.02em', marginBottom: 4 }}>
+                        Compensation Analytics
+                    </h1>
+                    <p style={{ fontSize: 13.5, color: 'var(--text-muted)' }}>
+                        Salary breakdown across top 10 personnel records.
+                    </p>
                 </div>
-            </motion.div>
-        </div>
+
+                {/* Stat Cards */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(160px,1fr))', gap: 14, marginBottom: 24 }}>
+                    {loading
+                        ? [1, 2, 3].map(i => (
+                            <div key={i} className="shimmer-wrap" style={{ height: 90, borderRadius: 12 }} />
+                        ))
+                        : statCards.map(({ label, value, icon: Icon, color }) => (
+                            <motion.div key={label} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+                                <div className="stat-card">
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
+                                        <p className="stat-card-label">{label}</p>
+                                        <div style={{ width: 32, height: 32, borderRadius: 8, background: `rgba(${color === 'var(--success)' ? '16,185,129' : color === 'var(--accent)' ? '139,92,246' : '99,102,241'},.1)`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                            <Icon size={15} color={color} />
+                                        </div>
+                                    </div>
+                                    <p className="stat-card-value">{value}</p>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 6 }}>
+                                        <ArrowUpRight size={12} color="var(--success)" />
+                                        <span style={{ fontSize: 11, color: 'var(--success)', fontWeight: 600 }}>Live data</span>
+                                    </div>
+                                </div>
+                            </motion.div>
+                        ))
+                    }
+                </div>
+
+                {/* Chart Card */}
+                <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: .1 }}>
+                    <div style={{ background: 'white', border: '1px solid var(--border)', borderRadius: 16, boxShadow: 'var(--shadow-sm)', overflow: 'hidden' }}>
+                        <div style={{ padding: '18px 22px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                                <div style={{ width: 36, height: 36, borderRadius: 9, background: 'var(--primary-light)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                    <BarChart3 size={17} color="var(--primary)" />
+                                </div>
+                                <div>
+                                    <h2 style={{ fontSize: 14.5, fontWeight: 700, color: 'var(--text-primary)' }}>Salary Distribution</h2>
+                                    <p style={{ fontSize: 11.5, color: 'var(--text-muted)' }}>Top 10 personnel by compensation</p>
+                                </div>
+                            </div>
+                            <span className="badge badge-primary">
+                                <Award size={11} /> FY2026 Data
+                            </span>
+                        </div>
+
+                        <div style={{ padding: '24px 20px 16px' }}>
+                            {loading ? (
+                                <div className="shimmer-wrap" style={{ height: 360, borderRadius: 10 }} />
+                            ) : (
+                                <ResponsiveContainer width="100%" height={360}>
+                                    <BarChart data={data} margin={{ top: 10, right: 20, left: 10, bottom: 60 }} barCategoryGap="35%">
+                                        <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+                                        <XAxis dataKey="name" stroke="#94a3b8" fontSize={11} fontWeight={600}
+                                            tickLine={false} axisLine={false} interval={0} angle={-40} textAnchor="end" dy={8} />
+                                        <YAxis stroke="#94a3b8" fontSize={11} fontWeight={600}
+                                            tickLine={false} axisLine={false}
+                                            tickFormatter={v => `$${v / 1000}k`} />
+                                        <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(99,102,241,.05)', radius: 6 }} />
+                                        <Bar dataKey="salary" radius={[8, 8, 0, 0]} maxBarSize={52}>
+                                            {data.map((_, i) => (
+                                                <Cell key={i} fill={PALETTE[i % PALETTE.length]} fillOpacity={.88} />
+                                            ))}
+                                        </Bar>
+                                    </BarChart>
+                                </ResponsiveContainer>
+                            )}
+                        </div>
+
+                        {/* Legend */}
+                        <div style={{ padding: '14px 22px', borderTop: '1px solid var(--border)', display: 'flex', gap: 20, flexWrap: 'wrap' }}>
+                            {[
+                                { color: 'var(--primary)', label: 'Market Benchmark +4.2%' },
+                                { color: 'var(--accent)', label: 'Budget Utilization 92%' },
+                                { color: '#94a3b8', label: 'FY2026 Projection' },
+                            ].map(({ color, label }) => (
+                                <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, fontWeight: 600, color: 'var(--text-muted)' }}>
+                                    <div style={{ width: 8, height: 8, borderRadius: '50%', background: color, flexShrink: 0 }} />
+                                    {label}
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </motion.div>
+            </div>
+        </Layout>
     );
 };
 

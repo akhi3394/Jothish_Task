@@ -1,50 +1,47 @@
 import React from 'react';
-import { motion } from 'framer-motion';
 
-const SkeletonCard = () => {
-    return (
-        <div className="glass-card p-6 relative overflow-hidden">
-            <div className="flex justify-between items-start mb-5">
-                <div className="w-12 h-12 rounded-xl skeleton" />
-                <div className="w-16 h-5 rounded skeleton" />
-            </div>
-
-            <div className="mb-6 space-y-2">
-                <div className="w-2/3 h-6 rounded skeleton" />
-                <div className="w-1/3 h-4 rounded skeleton" />
-            </div>
-
-            <div className="grid grid-cols-2 gap-4 pb-6 border-b border-slate-50">
-                <div className="space-y-2">
-                    <div className="w-12 h-2 rounded skeleton opacity-50" />
-                    <div className="w-16 h-4 rounded skeleton" />
-                </div>
-                <div className="space-y-2 flex flex-col items-end">
-                    <div className="w-12 h-2 rounded skeleton opacity-50" />
-                    <div className="w-16 h-4 rounded skeleton" />
-                </div>
-            </div>
-
-            <div className="mt-4 w-24 h-3 rounded skeleton opacity-30" />
+const SkeletonCard = () => (
+    <div style={{
+        background: 'white',
+        border: '1px solid var(--border)',
+        borderRadius: 14,
+        padding: 20,
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 14
+    }}>
+        {/* Top row */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div className="shimmer-wrap" style={{ width: 44, height: 44, borderRadius: 12 }} />
+            <div className="shimmer-wrap" style={{ width: 40, height: 20, borderRadius: 6 }} />
         </div>
-    );
-};
-
-const SkeletonCards = ({ count = 6 }) => {
-    return (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
-            {Array.from({ length: count }).map((_, i) => (
-                <motion.div
-                    key={i}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.4, delay: i * 0.1 }}
-                >
-                    <SkeletonCard />
-                </motion.div>
-            ))}
+        {/* Name */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <div className="shimmer-wrap" style={{ height: 16, borderRadius: 6 }} />
+            <div className="shimmer-wrap" style={{ height: 13, width: '65%', borderRadius: 6 }} />
         </div>
-    );
-};
+        {/* Divider */}
+        <div style={{ height: 1, background: 'var(--border)', margin: '2px 0' }} />
+        {/* Meta */}
+        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+            <div className="shimmer-wrap" style={{ height: 12, width: 80, borderRadius: 6 }} />
+            <div className="shimmer-wrap" style={{ height: 12, width: 70, borderRadius: 6 }} />
+        </div>
+        {/* CTA */}
+        <div className="shimmer-wrap" style={{ height: 12, width: 90, borderRadius: 6 }} />
+    </div>
+);
+
+const SkeletonCards = ({ count = 9 }) => (
+    <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))',
+        gap: 16
+    }}>
+        {Array.from({ length: count }).map((_, i) => (
+            <SkeletonCard key={i} />
+        ))}
+    </div>
+);
 
 export default SkeletonCards;

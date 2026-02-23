@@ -2,145 +2,198 @@ import React from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
-    ChevronLeft,
-    RotateCcw,
-    CheckCircle2,
-    User,
-    ShieldCheck,
-    Download,
-    Share2,
-    Calendar
+    ChevronLeft, RotateCcw, CheckCircle2, User,
+    ShieldCheck, Download, Calendar, Fingerprint
 } from 'lucide-react';
+import Layout from '../components/Layout';
+
+const VerificationStep = ({ icon: Icon, title, description, color = 'var(--primary)' }) => (
+    <div style={{ display: 'flex', gap: 14, alignItems: 'flex-start' }}>
+        <div style={{
+            width: 36, height: 36, borderRadius: 10, flexShrink: 0,
+            background: `rgba(${color === 'var(--success)' ? '16,185,129' : '99,102,241'},.1)`,
+            border: `1px solid rgba(${color === 'var(--success)' ? '16,185,129' : '99,102,241'},.2)`,
+            display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: 2
+        }}>
+            <Icon size={16} color={color} />
+        </div>
+        <div>
+            <h3 style={{ fontSize: 13.5, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 3 }}>{title}</h3>
+            <p style={{ fontSize: 12, color: 'var(--text-muted)', lineHeight: 1.6 }}>{description}</p>
+        </div>
+    </div>
+);
 
 const PhotoResult = () => {
     const { state } = useLocation();
     const navigate = useNavigate();
 
-    if (!state || !state.photo) {
+    if (!state?.photo) {
         return (
-            <div className="min-h-screen flex items-center justify-center flex-col gap-6 text-center p-6 bg-[var(--bg-main)]">
-                <RotateCcw className="text-[var(--primary)] animate-spin-slow" size={48} />
-                <h1 className="text-xl font-bold text-[var(--text-main)]">No Session Data Found</h1>
-                <p className="text-[var(--text-muted)] text-sm max-w-xs">We couldn't find a valid identification capture. Please try again.</p>
-                <button onClick={() => navigate('/list')} className="btn-premium px-8">Return to Dashboard</button>
-            </div>
+            <Layout>
+                <div className="empty-state">
+                    <div className="empty-state-icon"><RotateCcw size={28} color="var(--primary)" /></div>
+                    <h1 style={{ fontSize: 18, fontWeight: 800, color: 'var(--text-primary)' }}>No Session Data</h1>
+                    <p style={{ fontSize: 13.5, color: 'var(--text-muted)', maxWidth: 300 }}>
+                        No valid verification capture found. Please try again.
+                    </p>
+                    <button onClick={() => navigate('/list')} className="btn btn-primary">
+                        Return to Dashboard
+                    </button>
+                </div>
+            </Layout>
         );
     }
 
     const { photo, employee } = state;
+    const avatarHue = (employee?.id * 47) % 360;
     const timestamp = new Date().toLocaleString('en-US', {
         year: 'numeric', month: 'short', day: '2-digit',
         hour: '2-digit', minute: '2-digit', second: '2-digit'
     });
 
+    const handleDownload = () => {
+        const a = document.createElement('a');
+        a.href = photo;
+        a.download = `verification-${employee?.id}-${Date.now()}.png`;
+        a.click();
+    };
+
     return (
-        <div className="min-h-screen p-6 md:p-12 flex items-center justify-center bg-[var(--bg-main)]">
-            <motion.div
-                initial={{ opacity: 0, scale: 0.98, y: 10 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                className="glass-card p-1 max-w-4xl w-full !bg-white"
-            >
-                <div className="p-8 md:p-12">
-                    <div className="flex flex-col md:flex-row items-center justify-between mb-10 gap-6">
-                        <div className="flex items-center gap-4">
-                            <div className="w-14 h-14 rounded-2xl bg-green-50 text-green-600 flex items-center justify-center border border-green-100">
-                                <ShieldCheck size={32} />
-                            </div>
-                            <div className="text-center md:text-left">
-                                <h1 className="text-2xl font-extrabold text-[var(--text-main)] tracking-tight">Identity Verified</h1>
-                                <p className="text-[var(--text-muted)] text-sm font-medium">Verification record successfully captured</p>
-                            </div>
-                        </div>
+        <Layout>
+            <div className="page-wrapper">
+                {/* Breadcrumb */}
+                <button
+                    onClick={() => navigate(`/details/${employee?.id}`, { state: { employee } })}
+                    style={{
+                        display: 'flex', alignItems: 'center', gap: 6,
+                        background: 'none', border: 'none', cursor: 'pointer',
+                        color: 'var(--text-muted)', fontSize: 13, fontWeight: 500,
+                        marginBottom: 24, padding: 0
+                    }}
+                    onMouseOver={e => e.currentTarget.style.color = 'var(--text-primary)'}
+                    onMouseOut={e => e.currentTarget.style.color = 'var(--text-muted)'}
+                >
+                    <ChevronLeft size={15} />
+                    Profile / Verification Result
+                </button>
 
-                        <div className="flex gap-2">
-                            <button className="btn-outline !p-2.5 text-slate-400 hover:text-[var(--text-main)]" title="Download">
-                                <Download size={18} />
-                            </button>
-                            <button className="btn-outline !p-2.5 text-slate-400 hover:text-[var(--text-main)]" title="Share">
-                                <Share2 size={18} />
-                            </button>
-                        </div>
+                {/* Success Banner */}
+                <motion.div
+                    initial={{ opacity: 0, y: -8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    style={{
+                        background: 'rgba(16,185,129,.06)', border: '1px solid rgba(16,185,129,.2)',
+                        borderRadius: 12, padding: '14px 20px',
+                        display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24
+                    }}
+                >
+                    <CheckCircle2 size={20} color="var(--success)" />
+                    <div>
+                        <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--success)' }}>Identity Verified Successfully</p>
+                        <p style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 1 }}>Verification record created at {timestamp}</p>
                     </div>
+                    <div style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
+                        <button onClick={handleDownload} className="btn btn-secondary" style={{ height: 34, padding: '0 12px', fontSize: 12 }}>
+                            <Download size={13} /> Download
+                        </button>
+                    </div>
+                </motion.div>
 
-                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start">
-                        {/* Visual Record */}
-                        <div className="lg:col-span-7">
-                            <motion.div
-                                className="relative rounded-2xl overflow-hidden border border-slate-200 shadow-lg group"
-                            >
-                                <img src={photo} alt="Verified identification" className="w-full h-auto grayscale-[0.1] transition-all group-hover:grayscale-0" />
+                {/* Main Grid */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 20 }}>
 
-                                <div className="absolute inset-x-0 bottom-0 p-6 bg-gradient-to-t from-black/80 to-transparent flex items-end justify-between">
-                                    <div className="flex items-center gap-3">
-                                        <div className="w-10 h-10 rounded-full bg-[var(--primary)] flex items-center justify-center border border-white/20">
-                                            <User size={20} className="text-white" />
+                    {/* Photo */}
+                    <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}>
+                        <div style={{ background: 'white', border: '1px solid var(--border)', borderRadius: 16, overflow: 'hidden', boxShadow: 'var(--shadow-sm)' }}>
+                            <div style={{ position: 'relative' }}>
+                                <img src={photo} alt="Verified identification"
+                                    style={{ width: '100%', display: 'block', objectFit: 'cover', maxHeight: 400 }} />
+                                {/* Overlay */}
+                                <div style={{
+                                    position: 'absolute', inset: '0 0 0 0',
+                                    background: 'linear-gradient(to top, rgba(0,0,0,.75) 0%, transparent 50%)',
+                                    display: 'flex', alignItems: 'flex-end', padding: 20
+                                }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                                        <div style={{
+                                            width: 38, height: 38, borderRadius: 10, flexShrink: 0,
+                                            background: `hsl(${avatarHue},70%,55%)`,
+                                            display: 'flex', alignItems: 'center', justifyContent: 'center'
+                                        }}>
+                                            <span style={{ fontSize: 15, fontWeight: 800, color: 'white' }}>
+                                                {(employee?.name || '?').charAt(0)}
+                                            </span>
                                         </div>
                                         <div>
-                                            <p className="text-white font-bold text-base leading-none mb-1">{employee.name}</p>
-                                            <p className="text-white/70 text-[10px] font-medium tracking-wide uppercase">{employee.designation}</p>
+                                            <p style={{ color: 'white', fontWeight: 700, fontSize: 14 }}>{employee?.name}</p>
+                                            <p style={{ color: 'rgba(255,255,255,.6)', fontSize: 11, fontWeight: 500 }}>{employee?.designation}</p>
                                         </div>
                                     </div>
-                                    <div className="text-right hidden sm:block">
-                                        <p className="text-white/40 text-[8px] uppercase font-bold tracking-widest mb-0.5">Recorded At</p>
-                                        <p className="text-white/80 text-[10px] font-mono">{timestamp}</p>
-                                    </div>
-                                </div>
-                            </motion.div>
-                        </div>
-
-                        {/* Verification Stats */}
-                        <div className="lg:col-span-5 space-y-6">
-                            <div className="space-y-5">
-                                <div className="flex items-start gap-3">
-                                    <div className="mt-1 w-5 h-5 rounded-full bg-[var(--primary-light)] flex items-center justify-center shrink-0">
-                                        <div className="w-1.5 h-1.5 rounded-full bg-[var(--primary)]" />
-                                    </div>
-                                    <div>
-                                        <h3 className="text-sm font-bold text-[var(--text-main)] mb-1">Optical Signature</h3>
-                                        <p className="text-[var(--text-muted)] text-xs leading-relaxed">Biometric landmarks successfully mapped and verified.</p>
-                                    </div>
-                                </div>
-
-                                <div className="flex items-start gap-3">
-                                    <div className="mt-1 w-5 h-5 rounded-full bg-[var(--primary-light)] flex items-center justify-center shrink-0">
-                                        <div className="w-1.5 h-1.5 rounded-full bg-[var(--primary)]" />
-                                    </div>
-                                    <div>
-                                        <h3 className="text-sm font-bold text-[var(--text-main)] mb-1">Credential Match</h3>
-                                        <p className="text-[var(--text-muted)] text-xs leading-relaxed">Identity confirmed for employee record ID-{employee.id}.</p>
-                                    </div>
-                                </div>
-
-                                <div className="flex items-start gap-3">
-                                    <div className="mt-1 w-5 h-5 rounded-full bg-[var(--primary-light)] flex items-center justify-center shrink-0">
-                                        <div className="w-1.5 h-1.5 rounded-full bg-[var(--primary)]" />
-                                    </div>
-                                    <div>
-                                        <h3 className="text-sm font-bold text-[var(--text-main)] mb-1">Session Log</h3>
-                                        <p className="text-[var(--text-muted)] text-xs leading-relaxed">Verification event logged at {timestamp.split(',')[1].trim()}.</p>
-                                    </div>
                                 </div>
                             </div>
-
-                            <div className="pt-8 border-t border-slate-100 space-y-3">
-                                <button
-                                    onClick={() => navigate('/list')}
-                                    className="btn-premium w-full !py-3.5 shadow-md"
-                                >
-                                    <CheckCircle2 size={20} /> Save Verification Record
-                                </button>
-                                <button
-                                    onClick={() => navigate(`/details/${employee.id}`, { state: { employee } })}
-                                    className="btn-outline w-full !py-3 !bg-slate-50 text-slate-600 border-slate-200"
-                                >
-                                    <RotateCcw size={16} /> Re-verify Identity
-                                </button>
+                            {/* Caption */}
+                            <div style={{ padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 8 }}>
+                                <Calendar size={13} color="var(--text-muted)" />
+                                <span style={{ fontSize: 11.5, color: 'var(--text-muted)' }}>Captured on {timestamp}</span>
                             </div>
                         </div>
-                    </div>
+                    </motion.div>
+
+                    {/* Verification Details */}
+                    <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: .1 }}>
+                        <div style={{ background: 'white', border: '1px solid var(--border)', borderRadius: 16, boxShadow: 'var(--shadow-sm)', overflow: 'hidden', height: '100%' }}>
+                            {/* Header */}
+                            <div style={{ padding: '18px 22px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 12 }}>
+                                <div style={{ width: 36, height: 36, borderRadius: 9, background: 'rgba(16,185,129,.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                    <ShieldCheck size={18} color="var(--success)" />
+                                </div>
+                                <div>
+                                    <h2 style={{ fontSize: 14.5, fontWeight: 700, color: 'var(--text-primary)' }}>Verification Report</h2>
+                                    <p style={{ fontSize: 11.5, color: 'var(--text-muted)' }}>Employee ID-{employee?.id}</p>
+                                </div>
+                                <span className="badge badge-success" style={{ marginLeft: 'auto' }}>Verified</span>
+                            </div>
+
+                            <div style={{ padding: '22px', display: 'flex', flexDirection: 'column', gap: 18 }}>
+                                <VerificationStep
+                                    icon={Fingerprint}
+                                    title="Biometric Signature"
+                                    description="Optical landmarks successfully captured and mapped in the verification record."
+                                    color="var(--primary)"
+                                />
+                                <VerificationStep
+                                    icon={User}
+                                    title="Credential Match"
+                                    description={`Identity confirmed for employee record ID-${employee?.id}.`}
+                                    color="var(--primary)"
+                                />
+                                <VerificationStep
+                                    icon={ShieldCheck}
+                                    title="Session Logged"
+                                    description={`Event logged at ${timestamp.split(',')[1]?.trim() || timestamp}.`}
+                                    color="var(--success)"
+                                />
+
+                                <div style={{ height: 1, background: 'var(--border)', margin: '4px 0' }} />
+
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                                    <button onClick={() => navigate('/list')} className="btn btn-primary" style={{ height: 46, fontSize: 14 }}>
+                                        <CheckCircle2 size={17} /> Save & Return to Dashboard
+                                    </button>
+                                    <button
+                                        onClick={() => navigate(`/details/${employee?.id}`, { state: { employee } })}
+                                        className="btn btn-secondary" style={{ height: 42, fontSize: 13 }}
+                                    >
+                                        <RotateCcw size={14} /> Re-verify Identity
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </motion.div>
                 </div>
-            </motion.div>
-        </div>
+            </div>
+        </Layout>
     );
 };
 
